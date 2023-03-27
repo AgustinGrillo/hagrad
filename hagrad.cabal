@@ -1,0 +1,79 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           hagrad
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/hagrad#readme>
+homepage:       https://github.com/githubuser/hagrad#readme
+bug-reports:    https://github.com/githubuser/hagrad/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2023 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/hagrad
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_hagrad
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+executable hagrad-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_hagrad
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , hagrad
+  default-language: Haskell2010
+
+test-suite hagrad-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_hagrad
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit >=1.6.2.0 && <1.7
+    , QuickCheck >=2.14.2 && <2.15
+    , ansi-terminal >=0.11.5 && <0.12
+    , ansi-terminal-types >=0.11.5 && <0.12
+    , base >=4.7 && <5
+    , call-stack >=0.4.0 && <0.5
+    , clock >=0.8.3 && <0.9
+    , colour >=2.3.6 && <2.4
+    , data-array-byte >=0.1.0.1 && <0.2
+    , hagrad
+    , hspec ==2.7.*
+    , hspec-core >=2.7.9 && <2.8
+    , hspec-discover ==2.7.*
+    , hspec-expectations >=0.8.2 && <0.9
+    , primitive >=0.8.0.0 && <0.9
+    , quickcheck-io >=0.2.0 && <0.3
+    , random >=1.2.1.1 && <1.3
+    , setenv >=0.1.1.3 && <0.2
+    , splitmix >=0.1.0.4 && <0.2
+    , tf-random ==0.5.*
+  default-language: Haskell2010
