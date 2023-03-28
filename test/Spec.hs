@@ -6,7 +6,7 @@ import Lib
 main :: IO ()
 main = hspec $ do
   describe "Loss function evaluation:" $ do
-      -- Loss = f(params) = value
+    -- Loss = f(params) = value
     it "Constant function evaluates correctly." $ do
       let constant = 11.0
       let loss =  Coef constant :: Loss
@@ -32,6 +32,24 @@ main = hspec $ do
       let param = Param pi
       let loss = Unary (cos) (Var param) :: Loss
       evaluate loss `shouldBe` (-1.0 :: Float)
+
+    it "Compound function evaluates correctly." $ do
+      let x1 = Param 3
+      let x2 = Param 2
+      let k3 = 24
+      let f1 = Unary (cos) (Var x1)
+      let f2 = Unary (**3) f1
+      let f3 = Binary (+) f2 (Coef k3)
+      let f4 = Unary (exp) (Var x2)
+      let loss = Binary (*) f3 f4
+      evaluate loss `shouldBe` (170.16791 :: Float)
+
+  -- describe "Loss function feedforward:" $ do
+  --   -- Loss = f(params) = value
+  --   it "Feedforward over constant function returns correct value." $ do
+  --     let constant = 11.0
+  --     let loss = Coef constant
+  --     feedforward loss `shouldBe` (11.0 :: Float)
 
   -- describe "One-dimensional gradient:" $ do
   --   it "derivate of f=x with respect to x equals 1" $ do
