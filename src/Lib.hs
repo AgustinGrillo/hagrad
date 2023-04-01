@@ -4,6 +4,7 @@ tester :: IO ()
 tester = putStrLn $ "test"
 
 --- Custom Data Types
+
 data UnOp = UnOp {uName :: String, uOperator :: (Float -> Float), uDerivative :: (Float -> Float)}
 
 data BinOp = BinOp {bName :: String, bOperator :: (Float -> Float -> Float), bDerivative :: (Float -> Float)}
@@ -83,13 +84,13 @@ expOperator = UnOp "exp" exp id
 
 tanhOperator = UnOp "tanh" tanh id
 
-plusOperatorr = BinOp "+" (+) id
+plusOperator = BinOp "+" (+) id
 
-minusOperatorr = BinOp "-" (-) id
+minusOperator = BinOp "-" (-) id
 
-divOperatorr = BinOp "/" (/) id
+divOperator = BinOp "/" (/) id
 
-multOperatorr = BinOp "*" (*) id
+multOperator = BinOp "*" (*) id
 
 powerOperator = BinOp "^" (**) id
 
@@ -101,4 +102,12 @@ testP = createVarLoss (Param 1)
 
 testUO = createUnaryLoss cosOperator testC
 
-testBO = createBinaryLoss plusOperatorr testUO testP
+testBO = createBinaryLoss plusOperator testUO testP
+
+-- FeedForward
+
+feedforward :: Loss -> Loss
+feedforward loss@(Coef constant _ _) = Coef constant (evaluate loss) 0.0
+feedforward loss@(Var param _ _) = Var param (evaluate loss) 0.0
+feedforward loss@(Binary f x1 x2 _ _) = Binary f (feedforward x1) (feedforward x2) (evaluate loss) 0.0
+feedforward loss@(Unary f x _ _) = Unary f (feedforward x) (evaluate loss) 0.0
