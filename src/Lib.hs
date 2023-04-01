@@ -84,8 +84,6 @@ expOperator = UnOp "exp" exp exp
 
 tanhOperator = UnOp "tanh" tanh ((1 /) . (** 2) . cosh)
 
-powerOperator power = UnOp "^" (** power) ((* power) . (** (power - 1)))
-
 plusOperator = BinOp "+" (+) (\f g -> const 1) (\f g -> const 1) -- d(f+g)/df = 1   d(f+g)/dg = 1
 
 minusOperator = BinOp "-" (-) (\f g -> const 1) (\f g -> const (-1)) -- d(f-g)/df = 1   d(f-g)/dg = -1
@@ -93,6 +91,8 @@ minusOperator = BinOp "-" (-) (\f g -> const 1) (\f g -> const (-1)) -- d(f-g)/d
 divOperator = BinOp "/" (/) (\f g -> const (1 / g)) (\f g -> const (-f / (g ** 2))) -- d(f/g)/df = 1/g   d(f/g)/dg = -f/g^2
 
 multOperator = BinOp "*" (*) (\f g -> const g) (\f g -> const f) -- d(f.g)/df = g   d(f.g)/dg = f
+
+powerOperator = BinOp "^" (**) (\f g -> const (g * f**(g-1))) (\f g -> const ((log f) * f**(g))) -- d(f^g)/df = g.f^(g-1)   d(f^g)/dg = (f^g).ln(f)
 
 --- Test
 
@@ -108,7 +108,9 @@ testBO = createBinaryLoss plusOperator testUO testP1
 
 testCompund1 = createUnaryLoss tanhOperator (createUnaryLoss cosOperator testP1)
 
-testCompund = createUnaryLoss expOperator (createBinaryLoss plusOperator (createUnaryLoss cosOperator testP1) (createUnaryLoss sinOperator testP2))
+testCompund2 = createUnaryLoss expOperator (createBinaryLoss plusOperator (createUnaryLoss cosOperator testP1) (createUnaryLoss sinOperator testP2))
+
+testCompund =  createBinaryLoss powerOperator (createCoefLoss 0.5) (createVarLoss (Param 3)) 
 
 -- FeedForward
 
@@ -124,8 +126,8 @@ backpropagation :: Loss -> Loss
 -- TODO: Add capability to have repeated variables. e.g. L = cos(x) + x
 -- L = H ( G ( F ( x ) ) )
 -- dL/dx = dH/dG . dG/dF . dF/dx
--- L = H ( M ( F, G) )  --- supported operations
--- dL/dx = dH/dM . (dM/dF . dF/dx + dM/dG . dM/dx)
+-- L = H ( M ( F, G) )
+-- dL/dx = dH/dM . dM/dx = dH/dM . (dM/dF . dF/dx + dM/dG . dM/dx)
 backpropagation loss = chainRuleStep loss Nothing
   where
     chainRuleStep :: Loss -> Maybe (Float, (Float -> Float)) -> Loss
