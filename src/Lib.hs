@@ -121,7 +121,7 @@ feedforward loss@(Unary f x _ _) = Unary f (feedforward x) (evaluate loss) 0.0
 -- Backpropagation
 
 backpropagation :: Loss -> Loss
--- TODO: Review
+-- TODO: Add capability to have repeated variables. e.g. L = cos(x) + x
 -- L = H ( G ( F ( x ) ) )
 -- dL/dx = dH/dG . dG/dF . dF/dx
 -- L = H ( M ( F, G) )  --- supported operations
