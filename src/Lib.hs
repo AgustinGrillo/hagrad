@@ -7,7 +7,7 @@ tester = putStrLn $ "test"
 
 data UnOp = UnOp {uName :: String, uOperator :: (Float -> Float), uDerivative :: (Float -> Float)}
 
-data BinOp = BinOp {bName :: String, bOperator :: (Float -> Float -> Float), bDerivative :: (Float -> Float)}
+data BinOp = BinOp {bName :: String, bOperator :: (Float -> Float -> Float), leftDerivative :: (Float -> Float -> (Float -> Float)), rightDerivative :: (Float -> Float -> (Float -> Float))}
 
 data Param = Param Float
 
@@ -84,27 +84,31 @@ expOperator = UnOp "exp" exp exp
 
 tanhOperator = UnOp "tanh" tanh ((1 /) . (** 2) . cosh)
 
-plusOperator = BinOp "+" (+) id
+powerOperator power = UnOp "^" (** power) ((* power) . (** (power - 1)))
 
-minusOperator = BinOp "-" (-) id
+plusOperator = BinOp "+" (+) (\f g -> const 1) (\f g -> const 1) -- d(f+g)/df = 1   d(f+g)/dg = 1
 
-divOperator = BinOp "/" (/) id
+minusOperator = BinOp "-" (-) (\f g -> const 1) (\f g -> const (-1)) -- d(f-g)/df = 1   d(f-g)/dg = -1
 
-multOperator = BinOp "*" (*) id
+divOperator = BinOp "/" (/) (\f g -> const (1 / g)) (\f g -> const (-f / (g ** 2))) -- d(f/g)/df = 1/g   d(f/g)/dg = -f/g^2
 
-powerOperator = BinOp "^" (**) id
+multOperator = BinOp "*" (*) (\f g -> const g) (\f g -> const f) -- d(f.g)/df = g   d(f.g)/dg = f
 
 --- Test
 
 testC = createCoefLoss 10
 
-testP = createVarLoss (Param 10)
+testP1 = createVarLoss (Param 10)
+
+testP2 = createVarLoss (Param 20)
 
 testUO = createUnaryLoss cosOperator testC
 
-testBO = createBinaryLoss plusOperator testUO testP
+testBO = createBinaryLoss plusOperator testUO testP1
 
-testCompund = createUnaryLoss tanhOperator (createUnaryLoss cosOperator testP)
+testCompund1 = createUnaryLoss tanhOperator (createUnaryLoss cosOperator testP1)
+
+testCompund = createUnaryLoss expOperator (createBinaryLoss plusOperator (createUnaryLoss cosOperator testP1) (createUnaryLoss sinOperator testP2))
 
 -- FeedForward
 
@@ -119,7 +123,9 @@ feedforward loss@(Unary f x _ _) = Unary f (feedforward x) (evaluate loss) 0.0
 backpropagation :: Loss -> Loss
 -- TODO: Review
 -- L = H ( G ( F ( x ) ) )
--- dL/dx = DH/DG . DG/DF . DF/Dx
+-- dL/dx = dH/dG . dG/dF . dF/dx
+-- L = H ( M ( F, G) )  --- supported operations
+-- dL/dx = dH/dM . (dM/dF . dF/dx + dM/dG . dM/dx)
 backpropagation loss = chainRuleStep loss Nothing
   where
     chainRuleStep :: Loss -> Maybe (Float, (Float -> Float)) -> Loss
@@ -133,7 +139,10 @@ backpropagation loss = chainRuleStep loss Nothing
         where
           gradient = (parentGradient * parentFunDerivative v)
     chainRuleStep loss@(Binary f x1 x2 v _) parentData = case parentData of
-      Nothing -> Binary f (chainRuleStep x1 (Just (1.0, bDerivative f))) (chainRuleStep x2 (Just (1.0, bDerivative f))) v 1.0
-      Just (parentGradient, parentFunDerivative) -> Binary f (chainRuleStep x1 (Just (gradient, bDerivative f))) (chainRuleStep x2 (Just (gradient, bDerivative f))) v gradient
+      Nothing -> Binary f (chainRuleStep x1 (Just (1.0, lDerivative))) (chainRuleStep x2 (Just (1.0, rDerivative))) v 1.0
+      Just (parentGradient, parentFunDerivative) -> Binary f (chainRuleStep x1 (Just (gradient, lDerivative))) (chainRuleStep x2 (Just (gradient, rDerivative))) v gradient
         where
           gradient = (parentGradient * parentFunDerivative v)
+      where
+        lDerivative = leftDerivative f (value x1) (value x2)
+        rDerivative = rightDerivative f (value x1) (value x2)
