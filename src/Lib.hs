@@ -21,14 +21,14 @@ instance Show Loss where
     where
       customShow :: Loss -> Int -> String
       customShow (Coef constant v g) l = treePrinter l ++ " ( " ++ show constant ++ " ) " ++ " -  V: " ++ show v ++ "  G: " ++ show g
-      customShow (Var (Param param) v g) l = treePrinter l ++ " ( " ++ show param ++ " ) "++ " -  V: " ++ show v ++ "  G: " ++ show g
-      customShow (Binary f x1 x2 v g) l = treePrinter l ++ " ( " ++ bName f ++ " ) "++ " -  V: " ++ show v ++ "  G: " ++ show g ++ customShow x1 (l+1) ++ customShow x2 (l+1)
-      customShow (Unary f x v g) l = treePrinter l ++ " ( " ++ uName f ++ " ) "++ " -  V: " ++ show v ++ "  G: " ++ show g ++ customShow x (l+1)
+      customShow (Var (Param param) v g) l = treePrinter l ++ " ( " ++ show param ++ " ) " ++ " -  V: " ++ show v ++ "  G: " ++ show g
+      customShow (Binary f x1 x2 v g) l = treePrinter l ++ " ( " ++ bName f ++ " ) " ++ " -  V: " ++ show v ++ "  G: " ++ show g ++ customShow x1 (l + 1) ++ customShow x2 (l + 1)
+      customShow (Unary f x v g) l = treePrinter l ++ " ( " ++ uName f ++ " ) " ++ " -  V: " ++ show v ++ "  G: " ++ show g ++ customShow x (l + 1)
 
       treePrinter :: Int -> String
       treePrinter indentation = "\n" ++ tabs ++ "│\n" ++ tabs ++ "└─"
         where
-          tabs = (replicate (2*indentation) ' ')
+          tabs = (replicate (2 * indentation) ' ')
 
 createUnaryLoss :: UnOp -> Loss -> Loss
 createUnaryLoss op arg =
