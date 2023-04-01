@@ -92,7 +92,7 @@ divOperator = BinOp "/" (/) (\f g -> const (1 / g)) (\f g -> const (-f / (g ** 2
 
 multOperator = BinOp "*" (*) (\f g -> const g) (\f g -> const f) -- d(f.g)/df = g   d(f.g)/dg = f
 
-powerOperator = BinOp "^" (**) (\f g -> const (g * f**(g-1))) (\f g -> const ((log f) * f**(g))) -- d(f^g)/df = g.f^(g-1)   d(f^g)/dg = (f^g).ln(f)
+powerOperator = BinOp "^" (**) (\f g -> const (g * f ** (g - 1))) (\f g -> const ((log f) * f ** (g))) -- d(f^g)/df = g.f^(g-1)   d(f^g)/dg = (f^g).ln(f)
 
 --- Test
 
@@ -110,7 +110,7 @@ testCompund1 = createUnaryLoss tanhOperator (createUnaryLoss cosOperator testP1)
 
 testCompund2 = createUnaryLoss expOperator (createBinaryLoss plusOperator (createUnaryLoss cosOperator testP1) (createUnaryLoss sinOperator testP2))
 
-testCompund =  createBinaryLoss powerOperator (createCoefLoss 0.5) (createVarLoss (Param 3)) 
+testCompund = createBinaryLoss powerOperator (createCoefLoss 0.5) (createVarLoss (Param 3))
 
 -- FeedForward
 
