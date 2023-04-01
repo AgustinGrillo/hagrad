@@ -98,11 +98,13 @@ powerOperator = BinOp "^" (**) id
 
 testC = createCoefLoss 10
 
-testP = createVarLoss (Param 1)
+testP = createVarLoss (Param 10)
 
 testUO = createUnaryLoss cosOperator testC
 
 testBO = createBinaryLoss plusOperator testUO testP
+
+testCompund = createUnaryLoss tanhOperator (createUnaryLoss cosOperator testP)
 
 -- FeedForward
 
@@ -113,23 +115,25 @@ feedforward loss@(Binary f x1 x2 _ _) = Binary f (feedforward x1) (feedforward x
 feedforward loss@(Unary f x _ _) = Unary f (feedforward x) (evaluate loss) 0.0
 
 -- Backpropagation
+
 backpropagation :: Loss -> Loss
 -- TODO: Review
 -- L = H ( G ( F ( x ) ) )
 -- dL/dx = DH/DG . DG/DF . DF/Dx
 backpropagation loss = chainRuleStep loss Nothing
   where
-    chainRuleStep :: Loss -> Maybe Loss -> Loss
-    chainRuleStep loss@(Coef constant v _) parent = (Coef constant v 0.0)
-    chainRuleStep loss@(Var (Param param) v _) parent = case parent of
-      Nothing -> Var (Param param) v 1
-      Just (Unary parentF parentX parentV parentG) -> Var (Param param) v (parentG * (uDerivative parentF) param)
-      Just (Binary parentF parentX1 parentX2 parentV parentG) -> Var (Param param) v (parentG * (bDerivative parentF) v)
-    chainRuleStep loss@(Unary f x v _) parent = case parent of
-      Nothing -> Unary f x v 1
-      Just (Unary parentF parentX parentV parentG) -> Unary f (chainRuleStep x (Just loss)) v (parentG * (uDerivative parentF) v)
-      Just (Binary parentF parentX1 parentX2 parentV parentG) -> Unary f (chainRuleStep x (Just loss)) v (parentG * (bDerivative parentF) v)
-    chainRuleStep loss@(Binary f x1 x2 v _) parent = case parent of
-      Nothing -> Binary f x1 x2 v 1
-      Just (Unary parentF parentX parentV parentG) -> Binary f (chainRuleStep x1 (Just loss)) (chainRuleStep x2 (Just loss)) v (parentG * (uDerivative parentF) v)
-      Just (Binary parentF parentX1 parentX2 parentV parentG) -> Binary f (chainRuleStep x1 (Just loss)) (chainRuleStep x2 (Just loss)) v (parentG * (bDerivative parentF) v)
+    chainRuleStep :: Loss -> Maybe (Float, (Float -> Float)) -> Loss
+    chainRuleStep loss@(Coef constant v _) parentData = (Coef constant v 0.0)
+    chainRuleStep loss@(Var (Param param) v _) parentData = case parentData of
+      Nothing -> Var (Param param) v 1.0
+      Just (parentGradient, parentFunDerivative) -> Var (Param param) v (parentGradient * parentFunDerivative v)
+    chainRuleStep loss@(Unary f x v _) parentData = case parentData of
+      Nothing -> Unary f (chainRuleStep x (Just (1.0, uDerivative f))) v 1.0
+      Just (parentGradient, parentFunDerivative) -> Unary f (chainRuleStep x (Just (gradient, uDerivative f))) v gradient
+        where
+          gradient = (parentGradient * parentFunDerivative v)
+    chainRuleStep loss@(Binary f x1 x2 v _) parentData = case parentData of
+      Nothing -> Binary f (chainRuleStep x1 (Just (1.0, bDerivative f))) (chainRuleStep x2 (Just (1.0, bDerivative f))) v 1.0
+      Just (parentGradient, parentFunDerivative) -> Binary f (chainRuleStep x1 (Just (gradient, bDerivative f))) (chainRuleStep x2 (Just (gradient, bDerivative f))) v gradient
+        where
+          gradient = (parentGradient * parentFunDerivative v)
