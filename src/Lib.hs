@@ -74,15 +74,15 @@ evaluate (Unary f x _ _) = (uOperator f) (evaluate x)
 
 --- Supported operators
 
-cosOperator = UnOp "cos" cos id
+cosOperator = UnOp "cos" cos ((* (-1)) . sin)
 
-sinOperator = UnOp "sin" sin id
+sinOperator = UnOp "sin" sin cos
 
-tanOperator = UnOp "tan" tan id
+tanOperator = UnOp "tan" tan ((1 /) . (** 2) . cos)
 
-expOperator = UnOp "exp" exp id
+expOperator = UnOp "exp" exp exp
 
-tanhOperator = UnOp "tanh" tanh id
+tanhOperator = UnOp "tanh" tanh ((1 /) . (** 2) . cosh)
 
 plusOperator = BinOp "+" (+) id
 
@@ -111,3 +111,25 @@ feedforward loss@(Coef constant _ _) = Coef constant (evaluate loss) 0.0
 feedforward loss@(Var param _ _) = Var param (evaluate loss) 0.0
 feedforward loss@(Binary f x1 x2 _ _) = Binary f (feedforward x1) (feedforward x2) (evaluate loss) 0.0
 feedforward loss@(Unary f x _ _) = Unary f (feedforward x) (evaluate loss) 0.0
+
+-- Backpropagation
+backpropagation :: Loss -> Loss
+-- TODO: Review
+-- L = H ( G ( F ( x ) ) )
+-- dL/dx = DH/DG . DG/DF . DF/Dx
+backpropagation loss = chainRuleStep loss Nothing
+  where
+    chainRuleStep :: Loss -> Maybe Loss -> Loss
+    chainRuleStep loss@(Coef constant v _) parent = (Coef constant v 0.0)
+    chainRuleStep loss@(Var (Param param) v _) parent = case parent of
+      Nothing -> Var (Param param) v 1
+      Just (Unary parentF parentX parentV parentG) -> Var (Param param) v (parentG * (uDerivative parentF) param)
+      Just (Binary parentF parentX1 parentX2 parentV parentG) -> Var (Param param) v (parentG * (bDerivative parentF) v)
+    chainRuleStep loss@(Unary f x v _) parent = case parent of
+      Nothing -> Unary f x v 1
+      Just (Unary parentF parentX parentV parentG) -> Unary f (chainRuleStep x (Just loss)) v (parentG * (uDerivative parentF) v)
+      Just (Binary parentF parentX1 parentX2 parentV parentG) -> Unary f (chainRuleStep x (Just loss)) v (parentG * (bDerivative parentF) v)
+    chainRuleStep loss@(Binary f x1 x2 v _) parent = case parent of
+      Nothing -> Binary f x1 x2 v 1
+      Just (Unary parentF parentX parentV parentG) -> Binary f (chainRuleStep x1 (Just loss)) (chainRuleStep x2 (Just loss)) v (parentG * (uDerivative parentF) v)
+      Just (Binary parentF parentX1 parentX2 parentV parentG) -> Binary f (chainRuleStep x1 (Just loss)) (chainRuleStep x2 (Just loss)) v (parentG * (bDerivative parentF) v)
