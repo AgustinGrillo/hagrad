@@ -3,7 +3,6 @@ module LossTest
   )
 where
 
-import Lib
 import Loss
 import Operators
 import Test.Hspec

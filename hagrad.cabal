@@ -53,6 +53,7 @@ test-suite hagrad-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      GradientTest
       LossTest
       Paths_hagrad
   hs-source-dirs:
