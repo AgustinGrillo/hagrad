@@ -26,6 +26,8 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Loss
+      Operators
   other-modules:
       Paths_hagrad
   hs-source-dirs:

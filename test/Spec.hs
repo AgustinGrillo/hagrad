@@ -1,5 +1,7 @@
 -- file Spec.hs
 
+import Operators
+import Loss
 import Lib
 import Test.Hspec
 
@@ -13,35 +15,35 @@ main = hspec $ do
       evaluate loss `shouldBe` (11.0 :: Float)
 
     it "Linear loss function evaluates correctly when input equals 0." $ do
-      let param = Param 0.0
+      let param = Param 0.0 "p"
       let loss = createVarLoss param
       evaluate loss `shouldBe` (0.0 :: Float)
 
     it "Linear loss function evaluates correctly when input equals 1." $ do
-      let param = Param 1.0
+      let param = Param 1.0 "p"
       let loss = createVarLoss param
       evaluate loss `shouldBe` (1.0 :: Float)
 
     it "Binary operator evaluates correctly." $ do
-      let param1 = createVarLoss (Param 2.0)
-      let param2 = createVarLoss (Param 8.0)
-      let loss = createBinaryLoss (*) param1 param2
+      let param1 = createVarLoss (Param 2.0 "p1")
+      let param2 = createVarLoss (Param 8.0 "p2")
+      let loss = createBinaryLoss multOperator param1 param2
       evaluate loss `shouldBe` (16.0 :: Float)
 
     it "Unary operator evaluates correctly." $ do
-      let param = createVarLoss (Param pi)
-      let loss = createUnaryLoss (cos) param
+      let param = createVarLoss (Param pi "p")
+      let loss = createUnaryLoss cosOperator param
       evaluate loss `shouldBe` (-1.0 :: Float)
 
     it "Compound function evaluates correctly." $ do
-      let x1 = createVarLoss (Param 3)
-      let x2 = createVarLoss (Param 2)
+      let x1 = createVarLoss (Param 3 "p1")
+      let x2 = createVarLoss (Param 2 "p2")
       let k3 = createCoefLoss 24
-      let f1 = createUnaryLoss (cos) x1
-      let f2 = createUnaryLoss (** 3) f1
-      let f3 = createBinaryLoss (+) f2 k3
-      let f4 = createUnaryLoss (exp) x2
-      let loss = createBinaryLoss (*) f3 f4
+      let f1 = createUnaryLoss cosOperator x1
+      let f2 = createBinaryLoss powerOperator f1 (createCoefLoss 3.0)
+      let f3 = createBinaryLoss plusOperator f2 k3
+      let f4 = createUnaryLoss expOperator x2
+      let loss = createBinaryLoss multOperator f3 f4
       evaluate loss `shouldBe` (170.16791 :: Float)
 
 -- describe "Loss function feedforward:" $ do
