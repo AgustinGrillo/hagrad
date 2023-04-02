@@ -53,8 +53,8 @@ backpropagation loss = chainRuleStep loss Nothing
 
 -- Loss gradient wrt parameter (after backprop)
 
-gradient :: Loss -> Param -> Float
-gradient loss param = addPartialGradient loss param 0.0
+gradient :: Loss -> Loss -> Float
+gradient loss (Var param _ _) = addPartialGradient loss param 0.0
   where
     addPartialGradient (Coef constant v partialGradient) param totalGradient = totalGradient
     addPartialGradient (Var var v partialGradient) param totalGradient
@@ -62,4 +62,5 @@ gradient loss param = addPartialGradient loss param 0.0
       | otherwise = totalGradient
     addPartialGradient (Binary f x1 x2 v partialGradient) param totalGradient = (addPartialGradient x1 param totalGradient) + (addPartialGradient x2 param totalGradient)
     addPartialGradient (Unary f x v partialGradient) param totalGradient = addPartialGradient x param totalGradient
+gradient _ _ = 0.0
 
