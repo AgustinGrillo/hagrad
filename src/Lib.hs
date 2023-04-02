@@ -1,7 +1,3 @@
--- TODO: Refactor
---      - Overload operators
---       * Make Loss an instance of Num typeclass (?)
---       * Create custom typeclass (?)
 -- NOTE: Idea:
 --      x1 = param(value, name)
 --      x2 = param(value, name)
@@ -13,9 +9,6 @@
 --      g2 = gradient l x2
 
 module Lib (module Lib) where
-
-tester :: IO ()
-tester = putStrLn $ "test"
 
 --- Custom Data Types
 
@@ -183,3 +176,33 @@ gradient loss param = addPartialGradient loss param 0.0
       | otherwise = totalGradient
     addPartialGradient (Binary f x1 x2 v partialGradient) param totalGradient = (addPartialGradient x1 param totalGradient) + (addPartialGradient x2 param totalGradient)
     addPartialGradient (Unary f x v partialGradient) param totalGradient = addPartialGradient x param totalGradient
+
+instance Num Loss where
+  leftLoss + rightLoss = createBinaryLoss plusOperator leftLoss rightLoss
+  leftLoss * rightLoss = createBinaryLoss multOperator leftLoss rightLoss
+  leftLoss - rightLoss = createBinaryLoss plusOperator leftLoss rightLoss
+  fromInteger i = createCoefLoss (fromInteger i)
+  abs loss = error "Not implemented"
+  signum loss = error "Not implemented"
+
+instance Fractional Loss where
+  leftLoss / rightLoss = createBinaryLoss divOperator leftLoss rightLoss
+  fromRational i = createCoefLoss (fromRational i)
+
+instance Floating Loss where
+  leftLoss ** rightLoss = createBinaryLoss powerOperator leftLoss rightLoss
+  pi = createCoefLoss pi
+  exp loss = createUnaryLoss expOperator loss
+  sin loss = createUnaryLoss sinOperator loss
+  cos loss = createUnaryLoss cosOperator loss
+  tan loss = createUnaryLoss tanOperator loss
+  tanh loss = createUnaryLoss tanhOperator loss
+  log loss = error "Not implemented"
+  asin loss = error "Not implemented"
+  acos loss = error "Not implemented"
+  atan loss = error "Not implemented"
+  sinh loss = error "Not implemented"
+  cosh loss = error "Not implemented"
+  asinh loss = error "Not implemented"
+  acosh loss = error "Not implemented"
+  atanh loss = error "Not implemented"
