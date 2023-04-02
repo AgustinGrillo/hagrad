@@ -9,7 +9,7 @@ data UnOp = UnOp {uName :: String, uOperator :: (Float -> Float), uDerivative ::
 
 data BinOp = BinOp {bName :: String, bOperator :: (Float -> Float -> Float), leftDerivative :: (Float -> Float -> (Float -> Float)), rightDerivative :: (Float -> Float -> (Float -> Float))}
 
-data Param = Param Float
+data Param = Param {pValue::Float, pName::String} deriving (Eq)
 
 data Loss
   = Unary {unOperator :: UnOp, arg :: Loss, value :: Float, grad :: Float}
@@ -22,7 +22,7 @@ instance Show Loss where
     where
       customShow :: Loss -> Int -> String
       customShow (Coef constant v g) l = treePrinter l ++ " ( " ++ show constant ++ " ) " ++ " -  V: " ++ show v ++ "  G: " ++ show g
-      customShow (Var (Param param) v g) l = treePrinter l ++ " ( " ++ show param ++ " ) " ++ " -  V: " ++ show v ++ "  G: " ++ show g
+      customShow (Var (Param param _) v g) l = treePrinter l ++ " ( " ++ show param ++ " ) " ++ " -  V: " ++ show v ++ "  G: " ++ show g
       customShow (Binary f x1 x2 v g) l = treePrinter l ++ " ( " ++ bName f ++ " ) " ++ " -  V: " ++ show v ++ "  G: " ++ show g ++ customShow x1 (l + 1) ++ customShow x2 (l + 1)
       customShow (Unary f x v g) l = treePrinter l ++ " ( " ++ uName f ++ " ) " ++ " -  V: " ++ show v ++ "  G: " ++ show g ++ customShow x (l + 1)
 
@@ -68,7 +68,7 @@ createCoefLoss constant =
 
 evaluate :: Loss -> Float
 evaluate (Coef constant _ _) = constant
-evaluate (Var (Param param) _ _) = param
+evaluate (Var (Param param _) _ _) = param
 evaluate (Binary f x1 x2 _ _) = (bOperator f) (evaluate x1) (evaluate x2)
 evaluate (Unary f x _ _) = (uOperator f) (evaluate x)
 
@@ -98,9 +98,9 @@ powerOperator = BinOp "^" (**) (\f g -> const (g * f ** (g - 1))) (\f g -> const
 
 testC = createCoefLoss 10
 
-testP1 = createVarLoss (Param 10)
+testP1 = createVarLoss (Param 10 "p1")
 
-testP2 = createVarLoss (Param 20)
+testP2 = createVarLoss (Param 20 "p2")
 
 testUO = createUnaryLoss cosOperator testC
 
@@ -110,15 +110,25 @@ testCompund1 = createUnaryLoss tanhOperator (createUnaryLoss cosOperator testP1)
 
 testCompund2 = createUnaryLoss expOperator (createBinaryLoss plusOperator (createUnaryLoss cosOperator testP1) (createUnaryLoss sinOperator testP2))
 
-testCompund = createBinaryLoss powerOperator (createCoefLoss 0.5) (createVarLoss (Param 3))
+testCompund = createBinaryLoss powerOperator (createCoefLoss 0.5) (createVarLoss (Param 3 "p"))
+
+testSame = createUnaryLoss expOperator (createBinaryLoss plusOperator (createUnaryLoss cosOperator testP1) (createUnaryLoss sinOperator testP1))
 
 -- FeedForward
 
 feedforward :: Loss -> Loss
 feedforward loss@(Coef constant _ _) = Coef constant (evaluate loss) 0.0
-feedforward loss@(Var param _ _) = Var param (evaluate loss) 0.0
+feedforward loss@(Var var _ _) = Var var (evaluate loss) 0.0
 feedforward loss@(Binary f x1 x2 _ _) = Binary f (feedforward x1) (feedforward x2) (evaluate loss) 0.0
 feedforward loss@(Unary f x _ _) = Unary f (feedforward x) (evaluate loss) 0.0
+
+-- Zero Gradients
+
+zeroGrad :: Loss -> Loss
+zeroGrad (Coef constant v _) = Coef constant v 0.0
+zeroGrad (Var var v _) = Var var v 0.0
+zeroGrad (Binary f x1 x2 v _) = Binary f (zeroGrad x1) (zeroGrad x2) v 0.0
+zeroGrad (Unary f x v _) = Unary f (zeroGrad x) v 0.0
 
 -- Backpropagation
 
@@ -132,9 +142,9 @@ backpropagation loss = chainRuleStep loss Nothing
   where
     chainRuleStep :: Loss -> Maybe (Float, (Float -> Float)) -> Loss
     chainRuleStep loss@(Coef constant v _) parentData = (Coef constant v 0.0)
-    chainRuleStep loss@(Var (Param param) v _) parentData = case parentData of
-      Nothing -> Var (Param param) v 1.0
-      Just (parentGradient, parentFunDerivative) -> Var (Param param) v (parentGradient * parentFunDerivative v)
+    chainRuleStep loss@(Var (Param param name) v _) parentData = case parentData of
+      Nothing -> Var (Param param name) v 1.0
+      Just (parentGradient, parentFunDerivative) -> Var (Param param name) v (parentGradient * parentFunDerivative v)
     chainRuleStep loss@(Unary f x v _) parentData = case parentData of
       Nothing -> Unary f (chainRuleStep x (Just (1.0, uDerivative f))) v 1.0
       Just (parentGradient, parentFunDerivative) -> Unary f (chainRuleStep x (Just (gradient, uDerivative f))) v gradient
@@ -148,3 +158,11 @@ backpropagation loss = chainRuleStep loss Nothing
       where
         lDerivative = leftDerivative f (value x1) (value x2)
         rDerivative = rightDerivative f (value x1) (value x2)
+
+-- Loss gradient wrt parameter
+
+-- gradient :: Loss -> Param -> Float
+-- gradient (Coef constant v _) param = Coef constant v 0.0
+-- gradient (Var var v _) param = Var param v 0.0
+-- gradient (Binary f x1 x2 v _) param = Binary f (zeroGrad x1) (zeroGrad x2) v 0.0
+-- gradient (Unary f x v _) param = Unary f (zeroGrad x) v 0.0
