@@ -4,6 +4,7 @@ import Operators
 
 --- Custom Data Types
 
+-- TODO: Make constructors private
 data Param = Param {pValue :: Float, pName :: String} deriving (Eq)
 
 data Loss

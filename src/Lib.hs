@@ -3,6 +3,10 @@ module Lib (module Lib) where
 import Loss
 import Operators
 
+-- Parameter creation
+param :: Float -> String -> Loss
+param value name = createVarLoss (Param value name)
+
 -- FeedForward
 
 feedforward :: Loss -> Loss
@@ -59,22 +63,3 @@ gradient loss param = addPartialGradient loss param 0.0
     addPartialGradient (Binary f x1 x2 v partialGradient) param totalGradient = (addPartialGradient x1 param totalGradient) + (addPartialGradient x2 param totalGradient)
     addPartialGradient (Unary f x v partialGradient) param totalGradient = addPartialGradient x param totalGradient
 
---- Test
-
-testC = createCoefLoss 10
-
-testP1 = createVarLoss (Param 10 "p1")
-
-testP2 = createVarLoss (Param 20 "p2")
-
-testUO = createUnaryLoss cosOperator testC
-
-testBO = createBinaryLoss plusOperator testUO testP1
-
-testCompund1 = createUnaryLoss tanhOperator (createUnaryLoss cosOperator testP1)
-
-testCompund2 = createUnaryLoss expOperator (createBinaryLoss plusOperator (createUnaryLoss cosOperator testP1) (createUnaryLoss sinOperator testP2))
-
-testCompund = createBinaryLoss powerOperator (createCoefLoss 0.5) (createVarLoss (Param 3 "p"))
-
-testSame = createUnaryLoss expOperator (createBinaryLoss plusOperator (createUnaryLoss cosOperator testP1) (createUnaryLoss sinOperator testP1))
