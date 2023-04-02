@@ -17,7 +17,7 @@ data Loss
 instance Num Loss where
   leftLoss + rightLoss = createBinaryLoss plusOperator leftLoss rightLoss
   leftLoss * rightLoss = createBinaryLoss multOperator leftLoss rightLoss
-  leftLoss - rightLoss = createBinaryLoss plusOperator leftLoss rightLoss
+  leftLoss - rightLoss = createBinaryLoss minusOperator leftLoss rightLoss
   fromInteger i = createCoefLoss (fromInteger i)
   abs loss = error "Not implemented"
   signum loss = error "Not implemented"
