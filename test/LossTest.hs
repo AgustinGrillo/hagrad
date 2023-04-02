@@ -49,20 +49,9 @@ lossSpec = describe "Loss Test" $ do
       let loss = createBinaryLoss multOperator f3 f4
       evaluate loss `shouldBe` (170.16791 :: Float)
 
--- describe "Loss function feedforward:" $ do
---   -- Loss = f(params) = value
---   it "Feedforward over constant function returns correct value." $ do
---     let constant = 11.0
---     let loss = Coef constant
---     feedforward loss `shouldBe` (11.0 :: Float)
+    it "Simplified sintax evaluates correctly." $ do
+      let x1 = createVarLoss (Param 3 "p1")
+      let x2 = createVarLoss (Param 2 "p2")
+      let loss = (((cos x1) ** 3) + 24) * (exp x2)
+      evaluate loss `shouldBe` (170.16791 :: Float)
 
--- describe "One-dimensional gradient:" $ do
---   it "derivate of f=x with respect to x equals 1" $ do
---     -- L = x
---     -- dL/dx (x=0) = 1.0
---     let x = Param 0.0
---     let loss = Loss x
---     ___ = {function, , }
---     grad loss `shouldBe` (1 :: Float)
-
--- it "derivate of f=2*x with respect to x equals 2" $ do
