@@ -9,7 +9,7 @@ data UnOp = UnOp {uName :: String, uOperator :: (Float -> Float), uDerivative ::
 
 data BinOp = BinOp {bName :: String, bOperator :: (Float -> Float -> Float), leftDerivative :: (Float -> Float -> (Float -> Float)), rightDerivative :: (Float -> Float -> (Float -> Float))}
 
-data Param = Param {pValue::Float, pName::String} deriving (Eq)
+data Param = Param {pValue :: Float, pName :: String} deriving (Eq)
 
 data Loss
   = Unary {unOperator :: UnOp, arg :: Loss, value :: Float, grad :: Float}
@@ -133,7 +133,6 @@ zeroGrad (Unary f x v _) = Unary f (zeroGrad x) v 0.0
 -- Backpropagation
 
 backpropagation :: Loss -> Loss
--- TODO: Add capability to have repeated variables. e.g. L = cos(x) + x
 -- L = H ( G ( F ( x ) ) )
 -- dL/dx = dH/dG . dG/dF . dF/dx
 -- L = H ( M ( F, G) )
@@ -159,10 +158,14 @@ backpropagation loss = chainRuleStep loss Nothing
         lDerivative = leftDerivative f (value x1) (value x2)
         rDerivative = rightDerivative f (value x1) (value x2)
 
--- Loss gradient wrt parameter
+-- Loss gradient wrt parameter (after backprop)
 
--- gradient :: Loss -> Param -> Float
--- gradient (Coef constant v _) param = Coef constant v 0.0
--- gradient (Var var v _) param = Var param v 0.0
--- gradient (Binary f x1 x2 v _) param = Binary f (zeroGrad x1) (zeroGrad x2) v 0.0
--- gradient (Unary f x v _) param = Unary f (zeroGrad x) v 0.0
+gradient :: Loss -> Param -> Float
+gradient loss param = addPartialGradient loss param 0.0
+  where
+    addPartialGradient (Coef constant v partialGradient) param totalGradient = totalGradient
+    addPartialGradient (Var var v partialGradient) param totalGradient
+      | var == param = totalGradient + partialGradient
+      | otherwise = totalGradient
+    addPartialGradient (Binary f x1 x2 v partialGradient) param totalGradient = (addPartialGradient x1 param totalGradient) + (addPartialGradient x2 param totalGradient)
+    addPartialGradient (Unary f x v partialGradient) param totalGradient = addPartialGradient x param totalGradient
