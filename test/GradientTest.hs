@@ -42,11 +42,11 @@ gradientSpec = describe "Gradient Computation Test" $ do
     it "over simple unary loss." $ do
       let loss = (backpropagation . feedforward) simpleUnaryLoss
       let grad = gradient loss x1
-      grad `shouldBe` -0.14112 
+      grad `shouldBe` -0.14112
     it "over compound unary loss." $ do
       let loss = (backpropagation . feedforward) compoundUnaryLoss
       let grad = gradient loss x1
-      grad `shouldBe` 0.8847673 
+      grad `shouldBe` 0.8847673
     it "over simple binary loss." $ do
       let loss = (backpropagation . feedforward) simpleBinaryLoss
       let grad = gradient loss x1
@@ -61,9 +61,9 @@ gradientSpec = describe "Gradient Computation Test" $ do
       let grad_x2 = gradient loss x2
       grad_x1 `shouldBe` 0.1
       grad_x2 `shouldBe` -0.03
-    -- it "over compound loss." $ do
-    --   let loss = (backpropagation . feedforward) compoundLoss
-    --   let grad_x1 = gradient loss x1
-    --   let grad_x2 = gradient loss x2
-    --   grad_x1 `shouldBe` 0.9402071 
-    --   grad_x2 `shouldBe` -0.2294965 
+    it "over compound loss." $ do
+      let loss = (backpropagation . feedforward) compoundLoss
+      let grad_x1 = gradient loss x1
+      let grad_x2 = gradient loss x2
+      grad_x1 `shouldBe` 0.9402071
+      grad_x2 `shouldBe` -0.2294965
